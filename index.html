@@ -110,8 +110,14 @@
             <button class="btn small" id="useMyTime" type="button">用現在時間</button>
         </div>
         <div class="row">
-            <button class="btn primary">號誌修改</button>
+            <button class="btn primary" type="button" id="edit">號誌修改</button>
         </div>
+        <div class="row">
+          <label>已經開始時間: </label>
+          <label id="timer">-- : --</label>
+        </div>
+        <div class="row" style="margin-top: 5px;">
+          <button class="btn small" type="button" id="reset">重置時間</button>
       </form>
     </section>
 
@@ -175,6 +181,9 @@
     //   const showSteps = document.getElementById('showSteps');
       const btnTime = document.getElementById('useMyTime');
       const timeInput = document.getElementById('timeInput');
+      const edit = document.getElementById('edit');
+      const resetBtn = document.getElementById('reset');
+      let timerInterval = null;
 
       btnMyLoc.addEventListener('click', async ()=>{
         if (!navigator.geolocation){
@@ -195,6 +204,39 @@
         const d = document.getElementById('destination');
         const tmp = o.value; o.value = d.value; d.value = tmp;
         const tmpLL = originLatLng; originLatLng = null; // 交換後重置我的位置 LatLng，避免混淆
+      });
+
+      edit.addEventListener('click', ()=>{
+        const inputTime = timeInput.value;
+        if (!inputTime) {
+            alert('請先輸入號誌修改開始時間');
+            return;
+        }
+        const now = new Date();
+        const [inputHours, inputMinutes] = inputTime.split(':').map(Number);
+        const inputDateTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), inputHours, inputMinutes);
+        let diffMs = now - inputDateTime;
+        if (diffMs < 0) {
+            alert('號誌修改開始時間不能是未來的時間');
+            return;
+        }
+        let totalDiffSeconds = 0;
+        let diffMinutes = Math.floor(totalDiffSeconds / 60);
+        const timerDiv = document.getElementById('timer');
+        timerDiv.textContent = `${diffMinutes} : ${totalDiffSeconds} `;;
+
+        timerInterval = setInterval(() => {
+            totalDiffSeconds++;
+            diffMinutes = Math.floor(totalDiffSeconds / 60);
+            diffSeconds = totalDiffSeconds % 60;
+            timerDiv.textContent = `${diffMinutes} : ${diffSeconds} `;
+        }, 1000);
+      });
+
+      resetBtn.addEventListener('click', ()=>{
+        clearInterval(timerInterval);
+        const timerDiv = document.getElementById('timer');
+        timerDiv.textContent = '-- : --';
       });
 
     //   toggleTraffic.addEventListener('change', (e)=>{
