@@ -46,11 +46,35 @@
     input[type="time"]::-webkit-calendar-picker-indicator {
         filter: invert(40%) sepia(80%) saturate(500%) hue-rotate(200deg);
     }
+    #back{
+      background-color: transparent;
+      height: 30px;
+      width: 30px;
+      background-size: cover; /* 使圖片覆蓋整個元素 */
+      background-repeat: no-repeat; /* 不重複平鋪 */
+      background-position: center; /* 圖片置中 */
+      background-image: url('previous.png');
+      margin-bottom: 10px;
+    }
+
+    #chat-launcher{position:fixed;left:65px;top:29px;width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0b1220;display:flex;align-items:center;justify-content:center;font-weight:700;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,.35);z-index:9999}
+    #chat-panel{position:fixed;right:20px;top:84px;width:360px;max-height:70vh;background:linear-gradient(180deg,var(--panel),#0d1325);border:1px solid #1f2937;border-radius:14px;display:none;flex-direction:column;overflow:hidden;z-index:9999}
+    .chat-header{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #1f2937}
+    .chat-title{font-size:14px}
+    .chat-close{background:transparent;border:0;color:#e5e7eb;font-size:18px;cursor:pointer}
+    .chat-messages{padding:12px;overflow:auto;display:flex;flex-direction:column;gap:10px;max-height:48vh}
+    .msg{padding:10px 12px;border-radius:12px;max-width:82%;white-space:pre-wrap;line-height:1.4}
+    .msg.user{align-self:flex-end;background  :#0b1220;border:1px solid #334155}
+    .msg.bot{align-self:flex-start;background:#0f172a;border:1px solid #334155}
+    .chat-input{display:flex;gap:8px;padding:10px;border-top:1px solid #1f2937}
+    .chat-input input{flex:1}
+    .chat-input .btn{padding:8px 12px}
   </style>
 </head>
 <body>
   <div class="app">
     <section class="panel">
+      <button onclick="history.back()" class="btn" id="back"></button>
       <h1>智慧救援走廊系統</h1>
       <p class="sub">輸入起點與目的地，可自動估算最快路線。</p>
 
@@ -284,5 +308,92 @@
   </script>
   <!-- 將 YOUR_API_KEY 替換為你的金鑰；需啟用 Maps JavaScript API、Places API、Directions API。 -->
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAuny0PTSAc2Ys84uJZLnXbGqBeB5QhfZU&libraries=places&callback=initMap" defer></script>
+  <div id="chat-launcher" title="開啟聊天室">💬</div>
+  <div id="chat-panel">
+    <div class="chat-header">
+      <div class="chat-title">AI助理聊天室</div>
+      <button class="chat-close" id="chatClose">×</button>
+    </div>
+    <div class="chat-messages" id="chatMessages"></div>
+    <div class="chat-input">
+      <input id="chatInput" placeholder="輸入訊息，按 Enter 送出" />
+      <button class="btn" id="chatSend">送出</button>
+    </div>
+  </div>
+
+  <script>
+    // ========= Gemini Chat =========
+    const GEMINI_API_KEY = 'AIzaSyDhhl8EszzTUAKvMNBpXyJ2bYenuOr8GyQ'; // ⚠️ 放在前端會被看見，請在 Google Cloud 對金鑰做 HTTP 來源與 API 限制，或改用後端 Proxy
+    const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+
+    const chatLauncher = document.getElementById('chat-launcher');
+    const chatPanel = document.getElementById('chat-panel');
+    const chatClose = document.getElementById('chatClose');
+    const chatInput = document.getElementById('chatInput');
+    const chatSend = document.getElementById('chatSend');
+    const chatMessages = document.getElementById('chatMessages');
+
+    // 以簡單陣列維持對話歷史 (符合 Gemini contents 結構)
+    const history = [];
+
+    chatLauncher.addEventListener('click', ()=>{
+      chatPanel.style.display = 'flex';
+      chatInput.focus();
+      if (chatMessages.childElementCount===0) addBot('嗨！我是AI助理，有什麼我可以幫忙的嗎？');
+    });
+    chatClose.addEventListener('click', ()=> chatPanel.style.display='none');
+
+    chatSend.addEventListener('click', sendMessage);
+    chatInput.addEventListener('keydown', (e)=>{
+      if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); }
+    });
+
+    function addUser(text){
+      const div = document.createElement('div'); div.className='msg user'; div.textContent=text; chatMessages.appendChild(div); chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    function addBot(text){
+      const div = document.createElement('div'); div.className='msg bot'; div.textContent=text; chatMessages.appendChild(div); chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+
+async function sendMessage() {
+  const text = chatInput.value.trim();
+  if (!text) return;
+  addUser(text);
+  chatInput.value = '';
+
+  const thinking = document.createElement('div');
+  thinking.className = 'msg bot';
+  thinking.textContent = '思考中…';
+  chatMessages.appendChild(thinking);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+
+  const payload = {
+    contents: [
+      ...history,
+      { role: 'user', parts: [{ text }] }
+    ]
+  };
+
+  try {
+    const res = await fetch(`${GEMINI_ENDPOINT}?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    const out =
+      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+      '（沒有回應內容）';
+    thinking.remove();
+    addBot(out);
+    history.push({ role: 'user', parts: [{ text }] });
+    history.push({ role: 'model', parts: [{ text: out }] });
+  } catch (err) {
+    thinking.remove();
+    addBot('呼叫 Gemini 失敗：' + err.message);
+  }
+}
+</script>
 </body>
 </html>

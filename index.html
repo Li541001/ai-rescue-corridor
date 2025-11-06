@@ -19,7 +19,7 @@
     /* Home layout */
     .home{display:grid;grid-template-columns:1fr 2fr;gap:14px;padding:14px}
     @media(max-width:960px){.home{grid-template-columns:1fr}}
-    .panel{background:linear-gradient(180deg,var(--panel),#0d1325);border:1px solid #1f2937;border-radius:18px;padding:14px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+    .panel{scrollbar-color: #334155 #0b1220; max-height: 350px; overflow-y: scroll; background:linear-gradient(180deg,var(--panel),#0d1325);border:1px solid #1f2937;border-radius:18px;padding:14px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
     h2{margin:0 0 10px;font-size:18px}
 
     /* Notices */
@@ -106,8 +106,8 @@
   <header class="topnav">
     <div class="brand">智慧救援走廊系統</div>
     <nav class="navlinks">
-      <button class="navbtn" id="navHome">救護車救援系統</button>
-      <button class="navbtn" id="navChat">Gemini 聊天</button>
+      <button class="navbtn" id="navHome">救災救援系統</button>
+      <button class="navbtn" id="navChat">AI助理聊天</button>
     </nav>
   </header>
 
@@ -164,6 +164,20 @@
               <td>救護</td>
               <td>臺北市中山區明水路</td>
               <td><span class="status warn">已派遣</span></td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td>2025/11/11 下午 10:03:23</td>
+              <td>救護</td>
+              <td>新北市土城區清水路</td>
+              <td><span class="status warn">已派遣</span></td>
+            </tr>
+            <tr>
+              <td>6</td>
+              <td>2025/11/20 下午 06:13:23</td>
+              <td>救護</td>
+              <td>新北市中和區金城路</td>
+              <td><span class="status warn">到達現場</span></td>
             </tr>
           </tbody>
         </table>
@@ -228,7 +242,7 @@
   <div id="chat-launcher" title="開啟聊天室">💬</div>
   <div id="chat-panel">
     <div class="chat-header">
-      <div class="chat-title">Gemini 聊天室</div>
+      <div class="chat-title">AI助理聊天室</div>
       <button class="chat-close" id="chatClose">×</button>
     </div>
     <div class="chat-messages" id="chatMessages"></div>
@@ -256,7 +270,7 @@
     chatLauncher.addEventListener('click', ()=>{
       chatPanel.style.display = 'flex';
       chatInput.focus();
-      if (chatMessages.childElementCount===0) addBot('嗨！我是 Gemini，小幫手已上線');
+      if (chatMessages.childElementCount===0) addBot('嗨！我是AI助理，有什麼我可以幫忙的嗎？');
     });
     chatClose.addEventListener('click', ()=> chatPanel.style.display='none');
 
